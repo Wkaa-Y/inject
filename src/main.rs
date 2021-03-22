@@ -1,4 +1,6 @@
-use std::{env::args, path::{Path, PathBuf}};
+use std::{env::args, ffi::OsStr, path::{Path, PathBuf}};
+
+const ALLOWED_EXTENSIONS: [&str; 4] = ["js", "jsx", "ts", "tsx"];
 
 #[allow(unused_must_use)]
 fn main() {
@@ -21,8 +23,8 @@ fn main() {
         } else { None }
     }).collect::<Vec<PathBuf>>();
 
-    for d in &root_entries {
-        read_dir_recursively(d, &args[1], &root_entries);
+    for path in &root_entries {
+        read_dir_recursively(path, &args[1], &root_entries);
     }
  }
 
@@ -34,19 +36,25 @@ where
 {
    let directories = std::fs::read_dir(path)?.filter_map(|d| d.ok()).collect::<Vec<_>>();
      for d in directories {
-         println!("{:?}", d.file_name());
          let dir_metadata = d.metadata().unwrap();
             if dir_metadata.is_dir() { read_dir_recursively(d.path(), alias, &root_entries); } 
-            else if dir_metadata.is_file() { inject(d.path(), alias); }
+            else if dir_metadata.is_file() {
+                let file_name = d.file_name();
+                let extension = Path::new(&file_name).extension().and_then(OsStr::to_str).unwrap(); 
+                if ALLOWED_EXTENSIONS.contains(&extension) { inject(d.path(), alias, &root_entries);  }
+            }
    }
 
     Ok(())
 }
 
 #[allow(unused_must_use)]
-fn inject<P>(path: P, alias: &str) 
+fn inject<P, T>(path: P, alias: &str, root_entries: &Vec<T>) 
 where 
-    P: AsRef<Path>
+    P: AsRef<Path>,
+    T: AsRef<Path>
 {   
-    std::fs::write(path, alias); // TODO
+    for entry in root_entries {
+    // TODO
+    }
 }

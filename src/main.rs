@@ -1,5 +1,6 @@
 use std::{env::args, path::Path};
 
+#[allow(unused_must_use)]
 fn main() {
     let _args = args().skip(1);
     let args_length = _args.len();
@@ -11,7 +12,7 @@ fn main() {
     let mut args: Vec<String> = Vec::with_capacity(capacity);
     args.extend(_args);
 
-    let _ = read_dir_recursively(&args[0], &args[1]);
+    read_dir_recursively(&args[0], &args[1]);
 }
 
 #[allow(unused_must_use)]

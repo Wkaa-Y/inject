@@ -1,6 +1,8 @@
 use std::{env::args, ffi::OsStr, path::{Path, PathBuf}};
 
+
 const ALLOWED_EXTENSIONS: [&str; 4] = ["js", "jsx", "ts", "tsx"];
+const PATTERNS: [&str; 4] = ["from \"", "from '", "import \"", "import '"];
 
 #[allow(unused_must_use)]
 fn main() {
@@ -24,12 +26,12 @@ fn main() {
     }).collect::<Vec<PathBuf>>();
 
     for path in &root_entries {
-        read_dir_recursively(path, &args[1], &root_entries);
+        read_dir_recursively(path, args[1], &root_entries);
     }
  }
 
 #[allow(unused_must_use)]
-fn read_dir_recursively<P, T>(path: P, alias: &str, root_entries: &Vec<T>) -> Result<(), std::io::Error>
+fn read_dir_recursively<P, T>(path: P, alias: String, root_entries: &Vec<T>) -> Result<(), std::io::Error>
 where
     P: AsRef<Path>,
     T: AsRef<Path>
@@ -49,12 +51,18 @@ where
 }
 
 #[allow(unused_must_use)]
-fn inject<P, T>(path: P, alias: &str, root_entries: &Vec<T>) 
+fn inject<P, T>(path: P, alias: String, root_entries: &Vec<T>) -> ()
 where 
     P: AsRef<Path>,
-    T: AsRef<Path>
+    T: AsRef<Path>,
 {   
     for entry in root_entries {
-    // TODO
+        let mut content = std::fs::read_to_string(path).unwrap();
+        for (index, pattern) in PATTERNS.iter().enumerate() {
+            let matcher = vec![pattern.to_string(), entry].join(""); // TODO : expect type error
+            let destination = vec![pattern.to_string(), alias, String::from("/"), entry].join(""); // TODO : expect type error
+            content = content.replace(&matcher, &destination);
+        }
+        std::fs::write(path, content);
     }
 }
